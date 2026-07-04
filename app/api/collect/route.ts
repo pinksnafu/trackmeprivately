@@ -31,6 +31,32 @@ export async function POST(req: Request) {
     const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || '';
 
+    // Security: Request Origin Verification (Anti-Spoofing)
+    const origin = req.headers.get('origin');
+    const referer = req.headers.get('referer');
+    const requestSource = origin || referer;
+
+    if (requestSource && process.env.DISABLE_ORIGIN_VERIFICATION !== 'true') {
+      try {
+        const sourceUrl = new URL(requestSource);
+        const actualHost = sourceUrl.hostname.replace(/^www\./, '');
+        const expectedHost = dbWebsite.domain.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+
+        // Allow localhost for local development checks
+        if (actualHost !== expectedHost && actualHost !== 'localhost' && actualHost !== '127.0.0.1') {
+          return new NextResponse(JSON.stringify({ error: 'Origin not allowed' }), {
+            status: 403,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            }
+          });
+        }
+      } catch (e) {
+        // Handle invalid URL parse gracefully
+      }
+    }
+
     const sessionId = generateSessionId(ip, userAgent, website);
 
     const parser = new UAParser(userAgent);

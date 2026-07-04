@@ -360,7 +360,7 @@ document.getElementById('cta-btn').addEventListener('click', () => {
               type="text"
               name="name"
               required
-              placeholder="e.g. Personal Site"
+              placeholder="e.g. My Website"
               style={{
                 background: 'rgba(0,0,0,0.3)',
                 border: '1px solid var(--border-color)',
@@ -377,7 +377,7 @@ document.getElementById('cta-btn').addEventListener('click', () => {
               type="text"
               name="domain"
               required
-              placeholder="e.g. mathiaskoeppel.com"
+              placeholder="e.g. example.com"
               style={{
                 background: 'rgba(0,0,0,0.3)',
                 border: '1px solid var(--border-color)',

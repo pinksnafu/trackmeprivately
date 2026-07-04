@@ -3,10 +3,7 @@ import { prisma } from '@/lib/prisma';
 import crypto from 'crypto';
 import { UAParser } from 'ua-parser-js';
 
-// Helper to anonymize IP and User-Agent on a daily basis
 function generateSessionId(ip: string, userAgent: string, websiteId: string) {
-  // Use today's date string as salt to ensure the hash changes every day.
-  // This prevents tracking users across multiple days, making it fully privacy compliant.
   const dateSalt = new Date().toISOString().split('T')[0];
   const hash = crypto.createHash('sha256');
   hash.update(`${ip}-${userAgent}-${websiteId}-${dateSalt}`);
@@ -22,6 +19,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing website id' }, { status: 400 });
     }
 
+    // Verify website exists
+    const dbWebsite = await prisma.website.findUnique({
+      where: { id: website }
+    });
+
+    if (!dbWebsite) {
+      return NextResponse.json({ error: 'Website not found' }, { status: 404 });
+    }
+
     const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
     const userAgent = req.headers.get('user-agent') || '';
 
@@ -31,7 +37,6 @@ export async function POST(req: Request) {
     const browser = parser.getBrowser().name || 'Unknown';
     const os = parser.getOS().name || 'Unknown';
     
-    // Simple device detection
     let deviceType = 'desktop';
     if (width && width < 768) {
       deviceType = 'mobile';
@@ -52,14 +57,19 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json({ success: true });
+    return new NextResponse(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      }
+    });
   } catch (error) {
     console.error('Error tracking event:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 
-// Support CORS for external scripts
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,

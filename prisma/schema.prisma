@@ -10,6 +10,25 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model User {
+  id             String          @id @default(cuid())
+  username       String          @unique
+  authenticators Authenticator[]
+  createdAt      DateTime        @default(now())
+}
+
+model Authenticator {
+  id                   String   @id // Credential ID (Base64URL)
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  publicKey            String   // Base64-encoded Public Key
+  counter              BigInt
+  transports           String?  // JSON string array of transports (usb, nfc, ble, internal)
+  credentialDeviceType String
+  credentialBackedUp   Boolean
+  createdAt            DateTime @default(now())
+}
+
 model Website {
   id        String   @id @default(cuid())
   domain    String   @unique
@@ -21,7 +40,7 @@ model Website {
 model Event {
   id         String   @id @default(cuid())
   websiteId  String
-  website    Website  @relation(fields: [websiteId], references: [id])
+  website    Website  @relation(fields: [websiteId], references: [id], onDelete: Cascade)
   sessionId  String
   eventName  String
   url        String

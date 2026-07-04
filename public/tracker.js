@@ -7,13 +7,14 @@
   var endpoint = (script && script.getAttribute('data-endpoint')) || '/api/collect';
   var website = script && script.getAttribute('data-website-id');
 
-  function sendEvent(eventName) {
+  function sendEvent(eventName, metadata) {
     var payload = {
       event: eventName || 'pageview',
       url: location.href,
       referrer: document.referrer || '',
       width: window.innerWidth,
       website: website,
+      metadata: metadata || null
     };
 
     try {
@@ -22,7 +23,7 @@
       req.setRequestHeader('Content-Type', 'application/json');
       req.send(JSON.stringify(payload));
     } catch (e) {
-      // Fail silently to avoid breaking the host site
+      // Fail silently to avoid breaking host site
     }
   }
 
@@ -52,4 +53,11 @@
       sendEvent();
     });
   }
+
+  // Expose global tracker object for custom events
+  window.privacyTracker = {
+    track: function (eventName, metadata) {
+      sendEvent(eventName, metadata);
+    }
+  };
 })();

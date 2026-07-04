@@ -12,13 +12,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing username or token' }, { status: 400 });
     }
 
-    // Verify setup token
     const isTokenValid = await verifySetupToken(token);
     if (!isTokenValid) {
       return NextResponse.json({ error: 'Invalid or expired Setup Token' }, { status: 401 });
     }
 
-    // Check if user already exists
     const existingUser = await prisma.user.findUnique({
       where: { username },
     });
@@ -26,13 +24,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Username already registered' }, { status: 400 });
     }
 
+    // Security: Use configured RP ID or fall back to request Host header
     const host = req.headers.get('host') || 'localhost';
-    const rpID = host.split(':')[0]; // Get domain without port
+    const rpID = process.env.ALLOWED_RP_ID || host.split(':')[0];
 
     const options = await generateRegistrationOptions({
       rpName: 'Privacy Tracker',
       rpID,
-      userID: Buffer.from(username), // Simple unique userID bytes
+      userID: Buffer.from(username),
       userName: username,
       userDisplayName: username,
       attestationType: 'none',
@@ -42,7 +41,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Store the challenge cookie
     await setChallengeCookie(options.challenge, username);
 
     return NextResponse.json(options);

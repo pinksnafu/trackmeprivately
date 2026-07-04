@@ -2,13 +2,15 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-const SECRET_KEY = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'fallback-secret-for-privacy-tracker-jwt-key'
-);
-
 async function decryptSession(token: string) {
+  if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
+    throw new Error('CRITICAL SECURITY ERROR: NEXTAUTH_SECRET environment variable must be set in production.');
+  }
+  const secret = new TextEncoder().encode(
+    process.env.NEXTAUTH_SECRET || 'dev-fallback-secret-for-privacy-tracker-jwt-key'
+  );
   try {
-    const { payload } = await jwtVerify(token, SECRET_KEY, {
+    const { payload } = await jwtVerify(token, secret, {
       algorithms: ['HS256'],
     });
     return payload;

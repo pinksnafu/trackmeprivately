@@ -16,8 +16,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No admin user configured. Please setup first.' }, { status: 400 });
     }
 
+    // Security: Use configured RP ID or fall back to request Host header
     const host = req.headers.get('host') || 'localhost';
-    const rpID = host.split(':')[0];
+    const rpID = process.env.ALLOWED_RP_ID || host.split(':')[0];
 
     const options = await generateAuthenticationOptions({
       rpID,

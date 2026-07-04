@@ -13,13 +13,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Session expired or challenge missing' }, { status: 400 });
     }
 
+    // Security: Use configured RP ID / Origin or fall back to request Host header
     const host = req.headers.get('host') || 'localhost';
-    const rpID = host.split(':')[0];
+    const rpID = process.env.ALLOWED_RP_ID || host.split(':')[0];
+    const expectedOrigin = process.env.ALLOWED_RP_ORIGIN 
+      ? process.env.ALLOWED_RP_ORIGIN.split(',') // Support comma-separated origins
+      : [`http://${host}`, `https://${host}`];
 
     const verification = await verifyRegistrationResponse({
       response: body,
       expectedChallenge: challengeData.challenge,
-      expectedOrigin: [`http://${host}`, `https://${host}`],
+      expectedOrigin,
       expectedRPID: rpID,
     });
 
@@ -32,7 +36,6 @@ export async function POST(req: Request) {
     const { credential, credentialDeviceType, credentialBackedUp } = registrationInfo;
     const { id, publicKey, counter, transports } = credential;
 
-    // Create user and store authenticator
     const user = await prisma.user.create({
       data: {
         username: challengeData.username!,
@@ -49,7 +52,6 @@ export async function POST(req: Request) {
       },
     });
 
-    // Cleanup and issue session
     clearSetupToken();
     await clearChallengeCookie();
     await setSessionCookie({ userId: user.id, username: user.username });

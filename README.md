@@ -38,15 +38,12 @@ Create a `.env` file in the root of the project:
 
 ```env
 DATABASE_URL="file:./dev.db"
-# NextAuth Configuration for Magic Links
-NEXTAUTH_URL="https://your-analytics-domain.com"
 NEXTAUTH_SECRET="your-nextauth-secret-key"
-# Email Service (For Magic Link authentication)
-EMAIL_SERVER_HOST="smtp.example.com"
-EMAIL_SERVER_PORT=587
-EMAIL_SERVER_USER="smtp-username"
-EMAIL_SERVER_PASSWORD="smtp-password"
-EMAIL_FROM="noreply@your-analytics-domain.com"
+NEXTAUTH_URL="https://your-analytics-domain.com"
+
+# WebAuthn Host/Origin Constraints (Protects against Host header spoofing)
+ALLOWED_RP_ID="your-analytics-domain.com"
+ALLOWED_RP_ORIGIN="https://your-analytics-domain.com"
 ```
 
 Sync the database schema:
@@ -75,6 +72,12 @@ Embed this code in the `<head>` or before `</body>` of the websites you want to 
   async
 ></script>
 ```
+
+---
+
+## 🤖 Developer & Agent Context
+
+This repository includes an [AGENTS.md](AGENTS.md) file in the root directory. It contains detailed directory structures, database schema models, authentication flow diagrams, and coding standards specifically designed for human developers and **AI Coding Agents** to quickly parse and contribute safely to this project.
 
 ---
 

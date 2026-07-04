@@ -12,10 +12,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Session expired or challenge missing' }, { status: 400 });
     }
 
+    // Security: Use configured RP ID / Origin or fall back to request Host header
     const host = req.headers.get('host') || 'localhost';
-    const rpID = host.split(':')[0];
+    const rpID = process.env.ALLOWED_RP_ID || host.split(':')[0];
+    const expectedOrigin = process.env.ALLOWED_RP_ORIGIN 
+      ? process.env.ALLOWED_RP_ORIGIN.split(',') // Support comma-separated origins
+      : [`http://${host}`, `https://${host}`];
 
-    // Find the authenticator in the database
     const credentialId = body.id;
     const dbAuthenticator = await prisma.authenticator.findUnique({
       where: { id: credentialId },
@@ -29,7 +32,7 @@ export async function POST(req: Request) {
     const verification = await verifyAuthenticationResponse({
       response: body,
       expectedChallenge: challengeData.challenge,
-      expectedOrigin: [`http://${host}`, `https://${host}`],
+      expectedOrigin,
       expectedRPID: rpID,
       credential: {
         id: dbAuthenticator.id,
@@ -45,7 +48,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Authentication failed' }, { status: 400 });
     }
 
-    // Update counter
     await prisma.authenticator.update({
       where: { id: dbAuthenticator.id },
       data: { counter: BigInt(authenticationInfo.newCounter) },

@@ -1,5 +1,7 @@
 # Privacy Tracker
 
+![Privacy Tracker Banner](./public/banner.jpg)
+
 A privacy-focused, zero-cookie, open-source analytics platform designed for lightweight self-hosting. Track page views, referrers, and device types on your website without annoying cookie banners or privacy violations.
 
 ## Core Philosophy & Privacy Design

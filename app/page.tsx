@@ -3,6 +3,7 @@ import Chart from '@/components/Chart';
 import WebsiteSwitcher from '@/components/WebsiteSwitcher';
 import { Activity, Users, Monitor, Globe, Plus, LogOut, ArrowRight, ShieldCheck } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import './globals.css';
 
 export const revalidate = 0; // Dynamic server rendering
@@ -40,6 +41,11 @@ export default async function Dashboard({
   const activeWebsite = params.websiteId
     ? websites.find((w) => w.id === params.websiteId)
     : websites[0];
+
+  const headerList = await headers();
+  const host = headerList.get('host') || 'localhost:3000';
+  const protocol = host.includes('localhost') || host.includes('127.0.0.1') ? 'http' : 'https';
+  const currentDomain = `${protocol}://${host}`;
 
   let stats = null;
 
@@ -268,14 +274,14 @@ export default async function Dashboard({
 
           {/* Integration Guide */}
           <div className="card" style={{ marginTop: '2rem' }}>
-            <h2 className="chart-title">Integration Code for {activeWebsite.name}</h2>
+            <h2 className="chart-title">Integration Code</h2>
             <p className="subtitle">
               Add this script to your site's header to start tracking visits and custom triggers.
             </p>
             <div className="snippet-box">
               {`<script 
-  src="${process.env.NEXTAUTH_URL || 'https://your-analytics-domain.com'}/tracker.js" 
-  data-endpoint="${process.env.NEXTAUTH_URL || 'https://your-analytics-domain.com'}/api/collect"
+  src="${currentDomain}/tracker.js" 
+  data-endpoint="${currentDomain}/api/collect"
   data-website-id="${activeWebsite.id}"
   async
 ></script>`}
@@ -304,13 +310,31 @@ document.getElementById('cta-btn').addEventListener('click', () => {
           </div>
         </>
       ) : (
-        <div style={{ textAlign: 'center', marginTop: '10%' }}>
-          <h2 className="title" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
-            Get started by registering a website
-          </h2>
-          <p className="subtitle" style={{ marginBottom: '2rem' }}>
-            You need to add at least one domain to begin tracking.
-          </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div style={{ textAlign: 'center', marginTop: '5%' }}>
+            <h2 className="title" style={{ fontSize: '1.5rem', marginBottom: '1rem' }}>
+              Get started by registering a website
+            </h2>
+            <p className="subtitle" style={{ marginBottom: '1.5rem' }}>
+              You need to add at least one domain to begin tracking.
+            </p>
+          </div>
+
+          {/* Example Integration Preview */}
+          <div className="card">
+            <h2 className="chart-title">Example Integration Code</h2>
+            <p className="subtitle">
+              Once you register a domain, you will embed a script like this to begin collecting data:
+            </p>
+            <div className="snippet-box">
+              {`<script 
+  src="${currentDomain}/tracker.js" 
+  data-endpoint="${currentDomain}/api/collect"
+  data-website-id="YOUR_WEBSITE_ID"
+  async
+></script>`}
+            </div>
+          </div>
         </div>
       )}
 

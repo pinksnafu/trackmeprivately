@@ -1,0 +1,36 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Website {
+  id        String   @id @default(cuid())
+  domain    String   @unique
+  name      String
+  createdAt DateTime @default(now())
+  events    Event[]
+}
+
+model Event {
+  id         String   @id @default(cuid())
+  websiteId  String
+  website    Website  @relation(fields: [websiteId], references: [id])
+  sessionId  String
+  eventName  String
+  url        String
+  referrer   String?
+  browser    String?
+  os         String?
+  deviceType String?
+  createdAt  DateTime @default(now())
+
+  @@index([websiteId, createdAt])
+  @@index([sessionId, createdAt])
+}

@@ -22,7 +22,7 @@
       req.open('POST', endpoint, true);
       req.setRequestHeader('Content-Type', 'application/json');
       req.send(JSON.stringify(payload));
-    } catch (e) {
+    } catch {
       // Fail silently to avoid breaking host site
     }
   }

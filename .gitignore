@@ -45,6 +45,7 @@ next-env.d.ts
 # SQLite Database
 /prisma/*.db
 /prisma/*.db-journal
+*.sqlite
 
 # Setup Token
 /prisma/setup_token.txt

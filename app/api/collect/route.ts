@@ -52,7 +52,7 @@ export async function POST(req: Request) {
             }
           });
         }
-      } catch (e) {
+      } catch {
         // Handle invalid URL parse gracefully
       }
     }

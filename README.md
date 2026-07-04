@@ -2,25 +2,25 @@
 
 ![Privacy Tracker Banner](./public/banner.jpg)
 
-A privacy-focused, zero-cookie, open-source analytics platform designed for lightweight self-hosting. Track page views, referrers, and device types on your website without annoying cookie banners or privacy violations.
+A privacy-focused, zero-cookie, open-source analytics platform designed for lightweight self-hosting. Track page views, referrers, devices, and custom events on your websites without cookie banners or long-lived user profiles.
 
 ## Core Philosophy & Privacy Design
 
-Unlike traditional analytics tools (e.g., Google Analytics) that build long-term user profiles and require intrusive cookie consent banners, **Privacy Tracker** operates with strict compliance under GDPR, CCPA, and the ePrivacy Directive:
+Unlike traditional analytics tools that build long-term user profiles and require intrusive cookie consent banners, **Privacy Tracker** keeps collection intentionally narrow:
 
 1. **No Cookies / LocalStorage**: The client-side script does not read, write, or require local browser cookies or storage.
 2. **Anonymized Sessions**: The server discards the raw IP address immediately. It generates a daily-rotating session hash using:
    `SHA256(IP + UserAgent + WebsiteID + DailyDateSalt)`
-   This allows tracking unique visitors and page path flow for a single calendar day without building persistent cross-day identity profiles.
-3. **Vanilla JS Tracker**: The tracking script is tiny (< 1KB), non-blocking, and loads asynchronously.
+   This allows daily unique-visitor counts without building persistent cross-day identity profiles.
+3. **Vanilla JS Tracker**: The tracking script is tiny, dependency-free, and non-blocking.
 
 ## Features
 
-- **Multi-Site Dashboard**: Track multiple domain configurations under a single unified view.
-- **Real-Time Telemetry**: Real-time page view counts, top pages, referrers, and device breakdown.
-- **Easy Self-Hosting**: Built with Next.js, Prisma, and SQLite—runs instantly on a low-resource VPS without database servers.
-- **PostgreSQL Compatibility**: Easily swap SQLite for PostgreSQL by changing a single environment variable.
-- **Passwordless Admin Access**: Log in securely using magic email links.
+- **Multi-Site Dashboard**: Track multiple domain configurations under a single dashboard.
+- **Real-Time Telemetry**: View page views, top pages, referrers, browser breakdowns, and custom events.
+- **Easy Self-Hosting**: Built with Next.js, Prisma, and SQLite for lightweight VPS deployments.
+- **SQLite First**: The default schema uses SQLite. PostgreSQL is possible later, but requires a Prisma provider/schema migration rather than only changing an environment variable.
+- **Passwordless Admin Access**: Log in with passkeys through WebAuthn/FIDO2. First admin registration is protected by a one-time setup token.
 
 ---
 
@@ -29,9 +29,9 @@ Unlike traditional analytics tools (e.g., Google Analytics) that build long-term
 ### 1. Installation
 
 ```bash
-git clone https://github.com/your-username/privacy-tracker.git
-cd privacy-tracker
-npm install
+git clone https://github.com/pinksnafu/trackmeprivately.git
+cd trackmeprivately
+npm ci
 ```
 
 ### 2. Configure Database & Environment
@@ -40,15 +40,18 @@ Create a `.env` file in the root of the project:
 
 ```env
 DATABASE_URL="file:./dev.db"
-NEXTAUTH_SECRET="your-nextauth-secret-key"
-NEXTAUTH_URL="https://your-analytics-domain.com"
+NEXTAUTH_SECRET="replace-with-a-strong-random-secret"
 
-# WebAuthn Host/Origin Constraints (Protects against Host header spoofing)
-ALLOWED_RP_ID="your-analytics-domain.com"
-ALLOWED_RP_ORIGIN="https://your-analytics-domain.com"
+# WebAuthn Host/Origin Constraints
+ALLOWED_RP_ID="localhost"
+ALLOWED_RP_ORIGIN="http://localhost:3000"
 ```
 
+For production, set `ALLOWED_RP_ID` to the analytics host, such as
+`analytics.example.com`, and `ALLOWED_RP_ORIGIN` to the exact HTTPS origin.
+
 Sync the database schema:
+
 ```bash
 npx prisma db push
 ```
@@ -57,8 +60,20 @@ npx prisma db push
 
 ```bash
 npm run build
+npm start
+```
+
+For local development, use:
+
+```bash
 npm run dev
 ```
+
+### 4. Create the First Admin
+
+On first boot with an empty database, the app logs a setup token and writes it to
+`prisma/setup_token.txt`. Visit `/login`, enter the token, and register a
+passkey. The setup token is deleted after the first user is created.
 
 ---
 
@@ -67,8 +82,8 @@ npm run dev
 Embed this code in the `<head>` or before `</body>` of the websites you want to track:
 
 ```html
-<script 
-  src="https://your-analytics-domain.com/tracker.js" 
+<script
+  src="https://your-analytics-domain.com/tracker.js"
   data-endpoint="https://your-analytics-domain.com/api/collect"
   data-website-id="YOUR_WEBSITE_ID"
   async
@@ -77,9 +92,9 @@ Embed this code in the `<head>` or before `</body>` of the websites you want to 
 
 ---
 
-## 🤖 Developer & Agent Context
+## Developer & Agent Context
 
-This repository includes an [AGENTS.md](AGENTS.md) file in the root directory. It contains detailed directory structures, database schema models, authentication flow diagrams, and coding standards specifically designed for human developers and **AI Coding Agents** to quickly parse and contribute safely to this project.
+This repository includes an [AGENTS.md](AGENTS.md) file in the root directory. It contains directory structure, database schema notes, authentication flow details, and coding standards for human developers and AI coding agents.
 
 ---
 

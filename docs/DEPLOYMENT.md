@@ -1,24 +1,24 @@
 # VPS Deployment Guide
 
-This guide details how to self-host the **Privacy Tracker** on a standard Ubuntu Linux VPS (such as the one running `mathiaskoeppel.com`) using **Caddy**, **Node.js**, and **PM2**.
+This guide details how to self-host **Privacy Tracker** on a standard Ubuntu Linux VPS using **Caddy**, **Node.js**, and **PM2**.
 
 ## Prerequisites
 
 - An Ubuntu VPS (Ubuntu 22.04 LTS or newer)
-- Node.js (v18+ recommended)
+- Node.js 20+; Node.js 24 LTS is recommended for this project
 - Caddy Server installed and running as a reverse proxy
-- A domain or subdomain pointed to your VPS (e.g. `analytics.yourdomain.com`)
+- A domain or subdomain pointed to your VPS, such as `analytics.example.com`
 
 ---
 
 ## Step 1: Clone and Set Up Code
 
-On the VPS, clone the repository to your preferred web root directory (e.g. `/var/www/privacy-tracker`):
+On the VPS, clone the repository to your preferred application directory:
 
 ```bash
-git clone https://github.com/your-username/privacy-tracker.git /var/www/privacy-tracker
-cd /var/www/privacy-tracker
-npm install
+git clone https://github.com/pinksnafu/trackmeprivately.git /opt/trackmeprivately
+cd /opt/trackmeprivately
+npm ci
 ```
 
 ---
@@ -31,18 +31,20 @@ Create and edit the `.env` file:
 nano .env
 ```
 
-Populate the `.env` file with the SQLite database URL and NextAuth SMTP variables to enable passwordless magic links:
+Populate the `.env` file with the SQLite database URL, a strong session secret,
+and WebAuthn host/origin constraints:
 
 ```env
 DATABASE_URL="file:./dev.db"
-NEXTAUTH_URL="https://analytics.yourdomain.com"
 NEXTAUTH_SECRET="choose-a-strong-random-key"
+ALLOWED_RP_ID="analytics.example.com"
+ALLOWED_RP_ORIGIN="https://analytics.example.com"
+```
 
-EMAIL_SERVER_HOST="smtp.mailgun.org" # Or AWS SES, SendGrid, etc.
-EMAIL_SERVER_PORT=587
-EMAIL_SERVER_USER="postmaster@yourdomain.com"
-EMAIL_SERVER_PASSWORD="your-smtp-password"
-EMAIL_FROM="noreply@yourdomain.com"
+Generate a strong secret with:
+
+```bash
+openssl rand -base64 32
 ```
 
 ---
@@ -57,43 +59,37 @@ npx prisma db push
 
 ---
 
-## Step 4: Run with PM2
-
-Install **PM2** globally to manage the Node.js process and ensure it starts up automatically after server reboots:
-
-```bash
-sudo npm install -g pm2
-```
-
-Build the Next.js production server:
+## Step 4: Build the Production App
 
 ```bash
 npm run build
 ```
 
-Start the application with PM2:
+---
+
+## Step 5: Run with PM2
+
+Install **PM2** globally to manage the Node.js process and ensure it starts up
+after server reboots:
 
 ```bash
-pm2 start npm --name "privacy-tracker" -- start
-```
-
-Save the process list and configure PM2 startup script:
-
-```bash
+sudo npm install -g pm2
+pm2 start npm --name "trackmeprivately" -- start
 pm2 save
 pm2 startup
 ```
-*(Follow any system commands printed by `pm2 startup` to configure the system service)*
+
+Follow any system commands printed by `pm2 startup` to configure the service.
 
 ---
 
-## Step 5: Configure Caddy Reverse Proxy
+## Step 6: Configure Caddy Reverse Proxy
 
-Edit your VPS Caddyfile (usually in `/etc/caddy/Caddyfile`):
+Edit your VPS Caddyfile, usually at `/etc/caddy/Caddyfile`:
 
 ```caddy
-analytics.yourdomain.com {
-    reverse_proxy localhost:3000
+analytics.example.com {
+    reverse_proxy 127.0.0.1:3000
 }
 ```
 
@@ -105,6 +101,16 @@ sudo systemctl reload caddy
 
 ---
 
-## Step 6: Create the First Website
+## Step 7: Create the First Admin
 
-To start tracking, add a Website record using the Next.js dashboard, copy the tracking script tag, and embed it into your static website.
+With an empty database, the app logs a setup token and writes it to
+`prisma/setup_token.txt`. Visit `https://analytics.example.com/login`, enter the
+setup token, and register the first admin passkey. The setup token is deleted
+after registration.
+
+---
+
+## Step 8: Create the First Website
+
+Add a Website record in the dashboard, copy the generated tracking snippet, and
+embed it into the static website you want to track.

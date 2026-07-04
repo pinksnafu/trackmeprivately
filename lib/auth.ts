@@ -32,7 +32,7 @@ export async function decryptSession(token: string): Promise<SessionPayload | nu
       algorithms: ['HS256'],
     });
     return payload as unknown as SessionPayload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

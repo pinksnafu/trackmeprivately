@@ -14,7 +14,7 @@ async function decryptSession(token: string) {
       algorithms: ['HS256'],
     });
     return payload;
-  } catch (error) {
+  } catch {
     return null;
   }
 }

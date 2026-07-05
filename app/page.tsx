@@ -276,7 +276,7 @@ export default async function Dashboard({
           <div className="card" style={{ marginTop: '2rem' }}>
             <h2 className="chart-title">Integration Code</h2>
             <p className="subtitle">
-              Add this script to your site's header to start tracking visits and custom triggers.
+              Add this script to your site&apos;s header to start tracking visits and custom triggers.
             </p>
             <div className="snippet-box">
               {`<script 

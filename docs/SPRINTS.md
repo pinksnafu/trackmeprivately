@@ -65,11 +65,11 @@ Start the development server:
 ```bash
 npm run dev
 ```
-In a separate terminal or using `curl`, verify that the CORS collection endpoint is active and responds with a success status (ensure you register a dummy site domain in SQLite first):
+In a separate terminal or using `curl`, verify that the CORS collection endpoint is active and responds with a success status (ensure you register a dummy site domain in SQLite first and replace `YOUR_WEBSITE_ID` with its id):
 ```bash
 curl -X POST http://localhost:3000/api/collect \
   -H "Content-Type: application/json" \
-  -d '{"website": "cmr5o4xij000012d3rgvfk01l", "url": "/test", "referrer": "", "width": 1280}'
+  -d '{"website": "YOUR_WEBSITE_ID", "url": "/test", "referrer": "", "width": 1280}'
 ```
 
 ### 3. Biometric Passkey Check

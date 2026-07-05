@@ -10,7 +10,12 @@ import {
   ResponsiveContainer 
 } from 'recharts';
 
-export default function Chart({ data }: { data: any[] }) {
+type ChartDataPoint = {
+  date: string;
+  views: number;
+};
+
+export default function Chart({ data }: { data: ChartDataPoint[] }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart

@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation';
 import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 import '../globals.css';
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message ? error.message : fallback;
+}
+
 export default function LoginPage() {
   const router = useRouter();
   const [needSetup, setNeedSetup] = useState<boolean | null>(null);
@@ -68,8 +72,8 @@ export default function LoginPage() {
 
       // 4. Redirect to dashboard
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Passkey registration failed');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Passkey registration failed'));
     } finally {
       setLoading(false);
     }
@@ -107,8 +111,8 @@ export default function LoginPage() {
 
       // 4. Redirect to dashboard
       router.push('/');
-    } catch (err: any) {
-      setError(err.message || 'Login failed. Ensure Passkey device is connected.');
+    } catch (err: unknown) {
+      setError(getErrorMessage(err, 'Login failed. Ensure Passkey device is connected.'));
     } finally {
       setLoading(false);
     }

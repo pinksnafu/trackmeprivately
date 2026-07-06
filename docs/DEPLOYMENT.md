@@ -1,6 +1,8 @@
 # VPS Deployment Guide
 
-This guide details how to self-host **Privacy Tracker** on a standard Ubuntu Linux VPS using **Caddy**, **Node.js**, and **PM2**.
+This guide details how to self-host **Privacy Tracker** on a standard Ubuntu
+Linux VPS using **Caddy**, **Node.js**, and **PM2**. For containerized hosting,
+see the [Docker Deployment Guide](DOCKER.md).
 
 ## Prerequisites
 

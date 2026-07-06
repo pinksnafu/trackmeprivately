@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: trackmeprivately
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /login
+    disk:
+      name: tracker-data
+      mountPath: /data
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        value: file:/data/trackmeprivately.db
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: ALLOWED_RP_ID
+        sync: false
+      - key: ALLOWED_RP_ORIGIN
+        sync: false
+      - key: SESSION_MAX_AGE
+        value: "2592000"
+      - key: SESSION_COOKIE_SAME_SITE
+        value: lax

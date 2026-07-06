@@ -1,0 +1,36 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: trackmeprivately:local
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      NODE_ENV: production
+      HOSTNAME: 0.0.0.0
+      PORT: 3000
+      DATABASE_URL: file:/data/trackmeprivately.db
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:?Set NEXTAUTH_SECRET in your shell or .env before starting Docker Compose}
+      ALLOWED_RP_ID: ${ALLOWED_RP_ID:-localhost}
+      ALLOWED_RP_ORIGIN: ${ALLOWED_RP_ORIGIN:-http://localhost:3000}
+      SESSION_MAX_AGE: ${SESSION_MAX_AGE:-2592000}
+      SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}
+      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN:-}
+      DISABLE_ORIGIN_VERIFICATION: ${DISABLE_ORIGIN_VERIFICATION:-false}
+    volumes:
+      - tracker-data:/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "node -e \"fetch('http://127.0.0.1:3000/login').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\""
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+volumes:
+  tracker-data:

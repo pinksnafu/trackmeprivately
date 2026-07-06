@@ -14,6 +14,8 @@ Unlike traditional analytics tools that build long-term user profiles and requir
    This allows daily unique-visitor counts without building persistent cross-day identity profiles.
 3. **Vanilla JS Tracker**: The tracking script is tiny, dependency-free, and non-blocking.
 
+For disclosure language and implementation notes, see [Privacy Policy Guidance](docs/PRIVACY.md).
+
 ## Features
 
 - **Multi-Site Dashboard**: Track multiple domain configurations under a single dashboard.

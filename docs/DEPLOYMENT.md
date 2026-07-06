@@ -114,3 +114,11 @@ after registration.
 
 Add a Website record in the dashboard, copy the generated tracking snippet, and
 embed it into the static website you want to track.
+
+---
+
+## Privacy Disclosures
+
+Before embedding the tracker on a public site, review
+[Privacy Policy Guidance](PRIVACY.md) and adapt the suggested disclosure text
+for the tracked website's privacy policy.

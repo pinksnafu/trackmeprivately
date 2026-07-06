@@ -2,11 +2,26 @@ import { prisma } from '@/lib/prisma';
 import Chart from '@/components/Chart';
 import WebsiteSwitcher from '@/components/WebsiteSwitcher';
 import { Activity, Users, Monitor, Globe, Plus, LogOut, ArrowRight, ShieldCheck } from 'lucide-react';
+import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import './globals.css';
 
 export const revalidate = 0; // Dynamic server rendering
+
+type RangeKey = '24h' | '7d' | '30d';
+type ChartBucket = 'hour' | 'day';
+
+type DashboardSearchParams = {
+  websiteId?: string | string[];
+  range?: string | string[];
+};
+
+const RANGE_OPTIONS: Array<{ value: RangeKey; label: string }> = [
+  { value: '24h', label: '24H' },
+  { value: '7d', label: '7D' },
+  { value: '30d', label: '30D' },
+];
 
 async function addWebsite(formData: FormData) {
   'use server';
@@ -28,18 +43,95 @@ async function addWebsite(formData: FormData) {
   }
 }
 
+function getFirstParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function normalizeRange(value?: string | string[]): RangeKey {
+  const range = getFirstParam(value);
+  return range === '24h' || range === '30d' ? range : '7d';
+}
+
+function getRangeConfig(range: RangeKey): { startDate: Date; bucket: ChartBucket; label: string } {
+  const now = new Date();
+
+  if (range === '24h') {
+    const startDate = startOfUtcHour(now);
+    startDate.setUTCHours(startDate.getUTCHours() - 23);
+    return { startDate, bucket: 'hour', label: 'Last 24 hours' };
+  }
+
+  const days = range === '30d' ? 30 : 7;
+  const startDate = startOfUtcDay(now);
+  startDate.setUTCDate(startDate.getUTCDate() - (days - 1));
+  return { startDate, bucket: 'day', label: `Last ${days} days` };
+}
+
+function startOfUtcHour(date: Date) {
+  return new Date(Date.UTC(
+    date.getUTCFullYear(),
+    date.getUTCMonth(),
+    date.getUTCDate(),
+    date.getUTCHours(),
+  ));
+}
+
+function startOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+}
+
+function formatChartKey(date: Date, bucket: ChartBucket) {
+  if (bucket === 'hour') {
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+    const hour = String(date.getUTCHours()).padStart(2, '0');
+    return `${month}/${day} ${hour}:00`;
+  }
+  return date.toISOString().split('T')[0];
+}
+
+function buildEmptyChartData(startDate: Date, bucket: ChartBucket) {
+  const now = bucket === 'hour' ? startOfUtcHour(new Date()) : startOfUtcDay(new Date());
+  const cursor = new Date(startDate);
+  const data: Array<{ date: string; views: number }> = [];
+
+  while (cursor <= now) {
+    data.push({ date: formatChartKey(cursor, bucket), views: 0 });
+    if (bucket === 'hour') {
+      cursor.setUTCHours(cursor.getUTCHours() + 1);
+    } else {
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+  }
+
+  return data;
+}
+
+function buildRangeHref(websiteId: string | undefined, range: RangeKey) {
+  const params = new URLSearchParams();
+  if (websiteId) {
+    params.set('websiteId', websiteId);
+  }
+  params.set('range', range);
+  return `/?${params.toString()}`;
+}
+
 export default async function Dashboard({
   searchParams,
 }: {
-  searchParams: Promise<{ websiteId?: string }>;
+  searchParams: Promise<DashboardSearchParams>;
 }) {
   const params = await searchParams;
+  const activeRange = normalizeRange(params.range);
+  const rangeConfig = getRangeConfig(activeRange);
+  const activeWebsiteId = getFirstParam(params.websiteId);
+
   const websites = await prisma.website.findMany({
     orderBy: { name: 'asc' },
   });
 
-  const activeWebsite = params.websiteId
-    ? websites.find((w) => w.id === params.websiteId)
+  const activeWebsite = activeWebsiteId
+    ? websites.find((w) => w.id === activeWebsiteId)
     : websites[0];
 
   const headerList = await headers();
@@ -50,39 +142,47 @@ export default async function Dashboard({
   let stats = null;
 
   if (activeWebsite) {
+    const eventWhere = {
+      websiteId: activeWebsite.id,
+      createdAt: { gte: rangeConfig.startDate },
+    };
+
     // 1. Total page views & custom events
     const totalViews = await prisma.event.count({
-      where: { websiteId: activeWebsite.id },
+      where: eventWhere,
     });
 
     // 2. Unique visitors (sessions)
     const uniqueSessionsRaw = await prisma.event.groupBy({
       by: ['sessionId'],
-      where: { websiteId: activeWebsite.id },
+      where: eventWhere,
     });
     const uniqueVisitors = uniqueSessionsRaw.length;
 
     // 3. Traffic data for charts
-    const events = await prisma.event.findMany({
-      where: { websiteId: activeWebsite.id },
+    const chartEvents = await prisma.event.findMany({
+      where: eventWhere,
+      select: { createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
 
-    const chartDataMap: Record<string, number> = {};
-    events.forEach((e) => {
-      const d = e.createdAt.toISOString().split('T')[0];
-      chartDataMap[d] = (chartDataMap[d] || 0) + 1;
+    const chartData = buildEmptyChartData(rangeConfig.startDate, rangeConfig.bucket);
+    const chartDataMap = new Map(chartData.map((point) => [point.date, point]));
+    chartEvents.forEach((e) => {
+      const bucketDate = rangeConfig.bucket === 'hour'
+        ? startOfUtcHour(e.createdAt)
+        : startOfUtcDay(e.createdAt);
+      const key = formatChartKey(bucketDate, rangeConfig.bucket);
+      const existing = chartDataMap.get(key);
+      if (existing) {
+        existing.views += 1;
+      }
     });
-
-    const chartData = Object.keys(chartDataMap).map((date) => ({
-      date,
-      views: chartDataMap[date],
-    }));
 
     // 4. Top Pages
     const topPages = await prisma.event.groupBy({
       by: ['url'],
-      where: { websiteId: activeWebsite.id, eventName: 'pageview' },
+      where: { ...eventWhere, eventName: 'pageview' },
       _count: { url: true },
       orderBy: { _count: { url: 'desc' } },
       take: 5,
@@ -91,7 +191,7 @@ export default async function Dashboard({
     // 5. Top Referrers
     const topReferrers = await prisma.event.groupBy({
       by: ['referrer'],
-      where: { websiteId: activeWebsite.id, referrer: { not: null } },
+      where: { ...eventWhere, referrer: { not: null } },
       _count: { referrer: true },
       orderBy: { _count: { referrer: 'desc' } },
       take: 5,
@@ -100,7 +200,7 @@ export default async function Dashboard({
     // 6. Custom Events breakdown
     const customEvents = await prisma.event.groupBy({
       by: ['eventName'],
-      where: { websiteId: activeWebsite.id, eventName: { not: 'pageview' } },
+      where: { ...eventWhere, eventName: { not: 'pageview' } },
       _count: { eventName: true },
       orderBy: { _count: { eventName: 'desc' } },
     });
@@ -108,7 +208,7 @@ export default async function Dashboard({
     // 7. System breakdown
     const browsers = await prisma.event.groupBy({
       by: ['browser'],
-      where: { websiteId: activeWebsite.id },
+      where: eventWhere,
       _count: { browser: true },
       orderBy: { _count: { browser: 'desc' } },
       take: 4,
@@ -136,7 +236,11 @@ export default async function Dashboard({
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           {/* Website Switcher Dropdown */}
           {websites.length > 0 && (
-            <WebsiteSwitcher websites={websites} activeWebsiteId={activeWebsite?.id} />
+            <WebsiteSwitcher
+              websites={websites}
+              activeWebsiteId={activeWebsite?.id}
+              activeRange={activeRange}
+            />
           )}
 
           <a
@@ -163,6 +267,22 @@ export default async function Dashboard({
 
       {activeWebsite && stats ? (
         <>
+          <div className="range-toolbar" aria-label="Dashboard time range">
+            <span>{rangeConfig.label}</span>
+            <div className="range-actions">
+              {RANGE_OPTIONS.map((option) => (
+                <Link
+                  key={option.value}
+                  href={buildRangeHref(activeWebsite.id, option.value)}
+                  className={option.value === activeRange ? 'range-button active' : 'range-button'}
+                  aria-current={option.value === activeRange ? 'page' : undefined}
+                >
+                  {option.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+
           {/* Stats Summary Cards */}
           <div className="grid">
             <div className="card">

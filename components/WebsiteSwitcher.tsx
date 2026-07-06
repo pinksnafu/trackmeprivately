@@ -11,14 +11,19 @@ interface Website {
 interface SwitcherProps {
   websites: Website[];
   activeWebsiteId?: string;
+  activeRange?: string;
 }
 
-export default function WebsiteSwitcher({ websites, activeWebsiteId }: SwitcherProps) {
+export default function WebsiteSwitcher({ websites, activeWebsiteId, activeRange }: SwitcherProps) {
   const router = useRouter();
 
   const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    router.push(`/?websiteId=${value}`);
+    const params = new URLSearchParams();
+    params.set('websiteId', e.target.value);
+    if (activeRange) {
+      params.set('range', activeRange);
+    }
+    router.push(`/?${params.toString()}`);
   };
 
   return (

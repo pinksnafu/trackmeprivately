@@ -1,6 +1,9 @@
 import { SignJWT, jwtVerify } from 'jose';
 import { cookies } from 'next/headers';
 
+const DEFAULT_SESSION_MAX_AGE = 30 * 24 * 60 * 60;
+type SessionCookieSameSite = 'lax' | 'strict' | 'none';
+
 // Helper to retrieve the secret key securely, ensuring it's present at runtime in production
 function getSecretKey() {
   if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
@@ -11,6 +14,55 @@ function getSecretKey() {
   );
 }
 
+function getSessionMaxAge() {
+  const rawValue = process.env.SESSION_MAX_AGE;
+  if (!rawValue) {
+    return DEFAULT_SESSION_MAX_AGE;
+  }
+
+  const parsed = Number(rawValue);
+  if (!Number.isInteger(parsed) || parsed <= 0) {
+    console.warn('Invalid SESSION_MAX_AGE value. Falling back to 30 days.');
+    return DEFAULT_SESSION_MAX_AGE;
+  }
+
+  return parsed;
+}
+
+function getSessionSameSite(): SessionCookieSameSite {
+  const rawValue = process.env.SESSION_COOKIE_SAME_SITE?.toLowerCase();
+  if (!rawValue) {
+    return 'lax';
+  }
+
+  if (rawValue === 'lax' || rawValue === 'strict' || rawValue === 'none') {
+    return rawValue;
+  }
+
+  console.warn('Invalid SESSION_COOKIE_SAME_SITE value. Falling back to lax.');
+  return 'lax';
+}
+
+function getSessionCookieDomain() {
+  const domain = process.env.SESSION_COOKIE_DOMAIN?.trim();
+  return domain || undefined;
+}
+
+function getSessionCookieOptions() {
+  const sameSite = getSessionSameSite();
+  const domain = getSessionCookieDomain();
+  const secure = process.env.NODE_ENV === 'production' || sameSite === 'none';
+
+  return {
+    httpOnly: true,
+    secure,
+    sameSite,
+    path: '/',
+    maxAge: getSessionMaxAge(),
+    ...(domain ? { domain } : {}),
+  };
+}
+
 export interface SessionPayload {
   userId: string;
   username: string;
@@ -18,10 +70,11 @@ export interface SessionPayload {
 
 export async function encryptSession(payload: SessionPayload): Promise<string> {
   const secret = getSecretKey();
+  const expiresAt = Math.floor(Date.now() / 1000) + getSessionMaxAge();
   return await new SignJWT({ ...payload })
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
-    .setExpirationTime('30d')
+    .setExpirationTime(expiresAt)
     .sign(secret);
 }
 
@@ -47,13 +100,7 @@ export async function getSession(): Promise<SessionPayload | null> {
 export async function setSessionCookie(payload: SessionPayload) {
   const token = await encryptSession(payload);
   const cookieStore = await cookies();
-  cookieStore.set('session_token', token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-  });
+  cookieStore.set('session_token', token, getSessionCookieOptions());
 }
 
 export async function clearSessionCookie() {

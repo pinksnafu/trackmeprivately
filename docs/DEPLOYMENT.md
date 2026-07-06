@@ -32,13 +32,18 @@ nano .env
 ```
 
 Populate the `.env` file with the SQLite database URL, a strong session secret,
-and WebAuthn host/origin constraints:
+WebAuthn host/origin constraints, and optional session cookie settings:
 
 ```env
 DATABASE_URL="file:./dev.db"
 NEXTAUTH_SECRET="choose-a-strong-random-key"
 ALLOWED_RP_ID="analytics.example.com"
 ALLOWED_RP_ORIGIN="https://analytics.example.com"
+
+# Optional session hardening. Defaults shown.
+SESSION_MAX_AGE="2592000"
+SESSION_COOKIE_SAME_SITE="lax"
+# SESSION_COOKIE_DOMAIN=".example.com"
 ```
 
 Generate a strong secret with:
@@ -46,6 +51,13 @@ Generate a strong secret with:
 ```bash
 openssl rand -base64 32
 ```
+
+`SESSION_MAX_AGE` is measured in seconds and controls both the signed JWT
+expiration and the `session_token` cookie lifetime. `SESSION_COOKIE_SAME_SITE`
+accepts `lax`, `strict`, or `none`; `strict` is appropriate when the admin
+panel is only used directly on the analytics domain. Leave
+`SESSION_COOKIE_DOMAIN` unset unless you intentionally need to share the admin
+session across a parent domain.
 
 ---
 

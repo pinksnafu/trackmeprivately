@@ -160,3 +160,49 @@ body {
   overflow-x: auto;
   margin-top: 1rem;
 }
+
+.range-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.range-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.range-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 3rem;
+  min-height: 2rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: color 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.range-button:hover,
+.range-button.active {
+  color: #fff;
+  border-color: rgba(59, 130, 246, 0.55);
+  background: rgba(59, 130, 246, 0.16);
+}
+
+@media (max-width: 768px) {
+  .range-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

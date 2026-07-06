@@ -21,6 +21,7 @@ For disclosure language and implementation notes, see [Privacy Policy Guidance](
 - **Multi-Site Dashboard**: Track multiple domain configurations under a single dashboard.
 - **Real-Time Telemetry**: View page views, top pages, referrers, browser breakdowns, and custom events.
 - **Easy Self-Hosting**: Built with Next.js, Prisma, and SQLite for lightweight VPS deployments.
+- **Container Ready**: Run with Docker Compose using a persistent SQLite volume.
 - **SQLite First**: The default schema uses SQLite. PostgreSQL is possible later, but requires a Prisma provider/schema migration rather than only changing an environment variable.
 - **Passwordless Admin Access**: Log in with passkeys through WebAuthn/FIDO2. First admin registration is protected by a one-time setup token.
 
@@ -70,6 +71,8 @@ For local development, use:
 ```bash
 npm run dev
 ```
+
+Docker users can follow the [Docker Deployment Guide](docs/DOCKER.md).
 
 ### 4. Create the First Admin
 

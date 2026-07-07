@@ -21,6 +21,12 @@ $$\text{SessionID} = \text{SHA-256}(\text{IP} + \text{UserAgent} + \text{Website
 - An attacker cannot reverse the hash to recover the user's IP.
 - Because the date salt rotates daily, visitor profiles cannot be tracked across different calendar days.
 
+### Custom Event Metadata Policy
+To maintain our strict zero-PII (Personally Identifiable Information) commitment and protect operators from compliance issues (GDPR/CCPA), **Privacy Tracker** explicitly discards metadata payloads at the API layer.
+- While the tracker script accepts a metadata parameter for compatibility, it does not transmit this data.
+- The server does not define, expect, or persist metadata fields in the SQLite database.
+- This design completely eliminates the risk of developers accidentally capturing personal names, email addresses, or session tokens in their telemetry database.
+
 ---
 
 ## 🛡️ 2. Request Origin Verification (Anti-Spoofing)

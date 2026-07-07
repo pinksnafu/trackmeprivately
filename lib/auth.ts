@@ -5,7 +5,7 @@ const DEFAULT_SESSION_MAX_AGE = 30 * 24 * 60 * 60;
 type SessionCookieSameSite = 'lax' | 'strict' | 'none';
 
 // Helper to retrieve the secret key securely, ensuring it's present at runtime in production
-function getSecretKey() {
+export function getSecretKey() {
   if (process.env.NODE_ENV === 'production' && !process.env.NEXTAUTH_SECRET) {
     throw new Error('CRITICAL SECURITY ERROR: NEXTAUTH_SECRET environment variable must be set in production.');
   }
@@ -14,7 +14,7 @@ function getSecretKey() {
   );
 }
 
-function getSessionMaxAge() {
+export function getSessionMaxAge() {
   const rawValue = process.env.SESSION_MAX_AGE;
   if (!rawValue) {
     return DEFAULT_SESSION_MAX_AGE;
@@ -29,7 +29,7 @@ function getSessionMaxAge() {
   return parsed;
 }
 
-function getSessionSameSite(): SessionCookieSameSite {
+export function getSessionSameSite(): SessionCookieSameSite {
   const rawValue = process.env.SESSION_COOKIE_SAME_SITE?.toLowerCase();
   if (!rawValue) {
     return 'lax';
@@ -43,12 +43,12 @@ function getSessionSameSite(): SessionCookieSameSite {
   return 'lax';
 }
 
-function getSessionCookieDomain() {
+export function getSessionCookieDomain() {
   const domain = process.env.SESSION_COOKIE_DOMAIN?.trim();
   return domain || undefined;
 }
 
-function getSessionCookieOptions() {
+export function getSessionCookieOptions() {
   const sameSite = getSessionSameSite();
   const domain = getSessionCookieDomain();
   const secure = process.env.NODE_ENV === 'production' || sameSite === 'none';

@@ -7,9 +7,7 @@
   var endpoint = (script && script.getAttribute('data-endpoint')) || '/api/collect';
   var website = script && script.getAttribute('data-website-id');
 
-  function sendEvent(eventName, metadata) {
-    // Note: metadata is accepted for compatibility but is explicitly discarded
-    // by the server to prevent accidental storage of PII (names, emails, etc.).
+  function sendEvent(eventName) {
     var payload = {
       event: eventName || 'pageview',
       url: location.href,
@@ -56,9 +54,10 @@
   }
 
   // Expose global tracker object for custom events
+  // Note: metadata payloads are explicitly ignored to protect visitor privacy.
   window.privacyTracker = {
-    track: function (eventName, metadata) {
-      sendEvent(eventName, metadata);
+    track: function (eventName) {
+      sendEvent(eventName);
     }
   };
 })();

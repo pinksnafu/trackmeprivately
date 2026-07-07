@@ -8,13 +8,14 @@
   var website = script && script.getAttribute('data-website-id');
 
   function sendEvent(eventName, metadata) {
+    // Note: metadata is accepted for compatibility but is explicitly discarded
+    // by the server to prevent accidental storage of PII (names, emails, etc.).
     var payload = {
       event: eventName || 'pageview',
       url: location.href,
       referrer: document.referrer || '',
       width: window.innerWidth,
-      website: website,
-      metadata: metadata || null
+      website: website
     };
 
     try {

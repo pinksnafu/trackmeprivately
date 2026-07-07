@@ -9,7 +9,7 @@ Privacy Tracker is designed to collect narrow, aggregate website analytics witho
 1. The embedded `tracker.js` script sends a page view or custom event to `/api/collect`.
 2. The server reads request headers, including IP address and user agent, only long enough to create a daily session hash.
 3. The raw IP address is not stored in the database.
-4. The server stores the event name, page URL, optional referrer, coarse device/browser details, website ID, timestamp, and daily session hash.
+4. The server stores the event name, page URL, optional referrer, coarse device/browser details, website ID, timestamp, and daily session hash. It explicitly discards any optional metadata payloads to prevent accidental capture of PII.
 5. The daily session hash rotates by date because it includes the current date salt.
 
 The session hash is generated as:
